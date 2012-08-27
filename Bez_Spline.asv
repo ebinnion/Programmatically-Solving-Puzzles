@@ -1,0 +1,107 @@
+function Bez_Spline(filename,z,plotit)
+
+data_hold = load(filename);
+x = data_hold(:,1);
+y = data_hold(:,2);
+Nx = length(x)
+% step_size = max(round(sqrt(Nx/100)),2);
+
+holder = find_corners_special(x,y,Nx,z);
+corners = holder(1,holder(1,:)~=0)+2
+bends = holder(2,(holder(2,:)~=0)&(holder(2,:)<Nx))
+    
+
+oops = find(corners>Nx);
+if length(oops)
+    corners(oops) = corners(oops)-Nx;
+end
+
+figure
+%errrr = [100,200,475,712,937,1155,1610,1697,1939,2014,2245,2363];
+%plot(x,y,'.')%,x(errrr),y(errrr),'or')
+
+% For data sheet 12/02/10
+% Nx
+% width=max(x)-min(x)
+% heigth=max(y)-min(y)
+% no_corners=length(corners)
+
+plot(x,y,'.k',x(corners),y(corners),'oc',x(bends),y(bends),'*r');
+axis([min(x)-5,max(x)+5,min(y)-5,max(y)+5])
+title(filename)
+
+%Start Eric Code
+linList = zeros(60,2);
+bendVar = 1;
+cornerVar = 1;
+i = 1;
+listIndex = 1;
+%Create a single list of all bends and corners
+while i < Nx
+   if bendVar <= length(bends)
+        if i ==  bends(bendVar) 
+            linList(listIndex,1) = bends(bendVar);
+            linList(listIndex,2) = 1;
+            bendVar = bendVar + 1;
+            listIndex = listIndex + 1;
+        end
+   end
+   if cornerVar <= length(corners)
+        if i == corners(cornerVar)
+            linList(listIndex,1) = corners(cornerVar);
+            linList(listIndex,2) = -1;
+            cornerVar = cornerVar + 1;
+            listIndex = listIndex + 1;
+        end
+   end
+   i = i+1;
+end
+%Let's print the list now ;)
+linList
+
+%Now let's split into cubics
+i = 3;
+listIndex = 1;
+cubicsList = zeros(60,2);
+cubicsList(1,1) = linList(1,1);
+while i <= (length(cubicsList) - 1)
+    %Tests for a corner being 3 spaces away from last
+    if linList(i+1,2) < 0
+        cubicsList(listIndex,2) = linList(i+1,1);
+        listIndex = listIndex + 1;
+        if linList(i+2,2) < 0
+            cubicsList(listIndex,1) = cubicsList(listIndex-1, 2);
+            
+            
+    elseif linList(i+1,2) > 0
+        cubicsList(listIndex,2) = (linList(i,1) + linList(i+1,1)) / 2;
+        listIndex = listIndex + 1;
+    end
+    cubicsList(listIndex,1) = cubicsList(listIndex-1, 2);
+    i = i+1;
+end
+cubicsList
+%End Eric code
+
+
+% saveas(1,sprintf('piece%02d_figure.png',z))
+% close all;
+
+% for i = 1:length(corners)-1
+%     xs = x(corners(i):corners(i+1));
+%     ys = y(corners(i):corners(i+1));
+%     holdit = Find_end_splines(xs,ys,step_size);
+%     figure
+%     plot(xs,ys,'.',xs(holdit),ys(holdit),'or')
+%     axis([min(x)-5,max(x)+5,min(y)-5,max(y)+5])
+% end
+% xs = [x(corners(length(corners)):Nx);x(1:corners(1))];
+% ys = [y(corners(length(corners)):Nx);y(1:corners(1))];
+% holdit = Find_end_splines(xs,ys,step_size);
+% figure
+% plot(xs,ys,'.',xs(holdit),ys(holdit),'or')
+% axis([min(x)-5,max(x)+5,min(y)-5,max(y)+5])
+% 
+% if (plotit==0)
+%     close all
+% end
